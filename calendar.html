@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Анти-тупёжный календарь</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <style>
+    :root{--bg:#0f1724;--card:#111827;--muted:#94a3b8;--accent:#22c55e;--text:#e6eef8}
+    
+    /* Темы */
+    body.theme-light {--bg:#f0f4f8;--card:#ffffff;--muted:#64748b;--accent:#3182ce;--text:#1f2937}
+    body.theme-earth {--bg:#3e332e;--card:#4c423f;--muted:#9e8b74;--accent:#a66b55;--text:#e4dcd3}
+    body.theme-pastel {--bg:#f1ecf4;--card:#fffcfc;--muted:#a490b0;--accent:#a782b6;--text:#4e405a}
+    body.theme-monochrome {--bg:#1e2532;--card:#2b3340;--muted:#a7b5c6;--accent:#4a90e2;--text:#dce3ed}
+    body.theme-dusty-rose {--bg:#3d2f2f;--card:#4e3e3e;--muted:#b6a39c;--accent:#66867e;--text:#f2e8e8}
+    
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;transition:background 0.3s, color 0.3s}
+    body.theme-default {background:linear-gradient(180deg,#071024 0%, #0b1220 100%);}
+    .app{width:100%;max-width:1200px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+    h1{font-size:20px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    button, select{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;transition:border-color 0.2s, background 0.2s, color 0.2s}
+    button:hover, select:hover{border-color:var(--muted)}
+    button.primary{background:var(--accent);color:var(--bg);font-weight:700}
+    
+    .grid{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;align-items:flex-start;}
+    .day{background:var(--card);padding:12px;border-radius:12px;min-width:250px;max-width:250px;text-align:center;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .day h3{margin:0;font-size:14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+    .arrow{transition:transform 0.2s;display:inline-block}
+    .arrow.open{transform:rotate(90deg)}
+    .status{margin:6px 0;padding:6px;border-radius:8px;font-size:13px}
+    /* Зафиксированные цвета для статусов */
+    .status.clean{background:rgba(34,197,94,0.12);color:#22c55e}
+    .status.light{background:rgba(245,158,11,0.09);color:#f59e0b}
+    .status.heavy{background:rgba(220,38,38,0.08);color:#ef4444}
+    .btns{display:flex;gap:6px;justify-content:center;margin:6px 0}
+    .legend{display:grid;gap:4px;align-items:center;margin-top:14px;flex-wrap:wrap}
+    .legend div{display:flex;gap:6px;align-items:center;font-size:13px}
+    .dot{width:12px;height:12px;border-radius:4px}
+    /* Зафиксированные цвета для точек в легенде */
+    .dot.clean{background:#22c55e}
+    .dot.light{background:#f59e0b}
+    .dot.heavy{background:#ef4444}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    input[type=file]{display:none}
+    .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .plan{margin-top:8px;text-align:left;overflow-y:auto; flex-grow: 1;}
+    .plan ul{list-style:none;padding:0;margin:0}
+    .plan li{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+    .plan input[type=text]{flex:1;background:var(--bg);color:var(--text);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:4px;font-size:13px; min-width: 0; outline: none; transition: border-color 0.2s, background 0.2s, color 0.2s;}
+    .plan input[type=text]:focus{border-color: rgba(255,255,255,0.3);}
+    .plan .task-check{width: 4px; height: 16px; border-radius: 2px; background: var(--muted); cursor: pointer; transition: background-color 0.2s;}
+    .plan li.done .task-check{background: var(--accent);}
+    .plan li.done input[type=text]{text-decoration:line-through;opacity:0.6}
+    .add-task{margin-top:6px;font-size:12px;cursor:pointer;color:var(--accent)}
+    .plan li button {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        padding: 0;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        font-size: 18px;
+        line-height: 1;
+        vertical-align: middle;
+    }
+    
+    /* Медиа-запрос для мобильных устройств */
+    @media (max-width: 768px) {
+        body {
+            padding: 16px;
+        }
+        .app {
+            width: 100%;
+        }
+        .grid {
+            gap: 8px;
+        }
+        .day {
+            min-width: 100%;
+            max-width: 100%;
+            margin-bottom: 8px;
+        }
+        .controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .top-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        button {
+            width: 100%;
+        }
+        .plan input[type=text]{
+          min-width: 60%;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Анти-тупёжный календарь — неделя</h1>
+      <div class="controls">
+        <select id="theme-switcher">
+          <option value="default">По умолчанию</option>
+          <option value="light">Светлая</option>
+          <option value="earth">Земля</option>
+          <option value="pastel">Пастель</option>
+          <option value="monochrome">Монохром</option>
+          <option value="dusty-rose">Пыльная роза</option>
+        </select>
+        <div class="top-actions">
+          <button id="resetBtn">Сбросить неделю</button>
+          <button id="resetTasksBtn">Сбросить все задачи</button>
+          <button id="saveSqlBtn">Сохранить в SQL (локально)</button>
+          <button id="loadSqlBtn">Загрузить из SQL</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid" id="weekGrid"></div>
+
+      <div class="legend">
+        <div><span class="dot clean"></span> Чистый день</div>
+        <div><span class="dot light"></span> Что то одно: алко / трава</div>
+        <div><span class="dot heavy"></span> Всё вместе: алко + трава + (мб потяжелее)</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const DAYS = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+    const STORAGE_KEY = 'anti_tup_week_v5';
+    const THEME_STORAGE_KEY = 'anti_tup_theme';
+
+    const STATES = ['clean','light','heavy'];
+    const STATE_LABEL = { clean: 'Чистый день', light: 'Алкоголь / Трава', heavy: 'Алкоголь + Трава' };
+    const STATE_ICONS = { clean: 'self_improvement', light: 'local_bar', heavy: 'mood_bad' };
+
+    const DEFAULT_STATE = DAYS.map(() => ({ state: 'clean', plan: [] }));
+
+    function loadState(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return DEFAULT_STATE;
+      try{
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed) && parsed.length === DAYS.length) return parsed;
+      } catch(e) {}
+      return DEFAULT_STATE;
+    }
+
+    function saveState(data){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+    const grid = document.getElementById('weekGrid');
+    let week = loadState();
+    let openPlans = {};
+
+    function render(){
+      grid.innerHTML='';
+      week.forEach((item,idx)=>{
+        const el = document.createElement('div'); el.className='day';
+        const title = document.createElement('h3');
+        const arrow = document.createElement('span'); arrow.className='arrow';
+        const arrowIcon = document.createElement('span');
+        arrowIcon.className = 'material-symbols-outlined';
+        arrowIcon.textContent = 'arrow_right';
+        arrow.appendChild(arrowIcon);
+        if(openPlans[idx]) arrow.classList.add('open');
+        title.appendChild(arrow);
+        const text = document.createElement('span'); text.textContent = DAYS[idx];
+        title.appendChild(text);
+        title.onclick = ()=>{
+          openPlans[idx] = !openPlans[idx];
+          render();
+        };
+
+        const status = document.createElement('div'); status.className = 'status ' + item.state; status.textContent = STATE_LABEL[item.state];
+        const btns = document.createElement('div'); btns.className='btns';
+        STATES.forEach(st=>{
+          const b = document.createElement('button');
+          const icon = document.createElement('span');
+          icon.className = 'material-symbols-outlined';
+          if(st === item.state){
+            icon.textContent = 'check_circle';
+          } else {
+            icon.textContent = STATE_ICONS[st];
+          }
+          b.appendChild(icon);
+          b.title = STATE_LABEL[st];
+          b.onclick = ()=>{ week[idx].state = st; saveState(week); render(); };
+          btns.appendChild(b);
+        });
+
+        const planDiv = document.createElement('div'); planDiv.className='plan';
+        const list = document.createElement('ul');
+        (item.plan||[]).forEach((taskObj, tIdx)=>{
+          if(typeof taskObj === 'string') taskObj = {text:taskObj, done:false};
+          const li = document.createElement('li');
+          if(taskObj.done) li.classList.add('done');
+          const check = document.createElement('div'); check.className='task-check';
+          check.onclick = ()=>{ week[idx].plan[tIdx].done = !week[idx].plan[tIdx].done; saveState(week); render(); openPlans[idx] = openPlans[idx]; };
+          const input = document.createElement('input'); input.type='text'; input.value=taskObj.text;
+          input.readOnly = !openPlans[idx];
+          input.oninput = ()=>{ week[idx].plan[tIdx].text = input.value; saveState(week); };
+          const del = document.createElement('button');
+          del.style.display = openPlans[idx] ? 'block' : 'none';
+          const delIcon = document.createElement('span');
+          delIcon.className = 'material-symbols-outlined';
+          delIcon.textContent = 'delete';
+          del.appendChild(delIcon);
+          del.onclick=()=>{ week[idx].plan.splice(tIdx,1); saveState(week); render(); openPlans[idx] = true; };
+          li.appendChild(check); li.appendChild(input); li.appendChild(del);
+          list.appendChild(li);
+        });
+        const add = document.createElement('div'); add.className='add-task'; add.textContent='+ Добавить задачу';
+        add.style.display = openPlans[idx] ? 'block' : 'none';
+        add.onclick = ()=>{ week[idx].plan.push({text:'',done:false}); saveState(week); render(); openPlans[idx] = true; };
+        planDiv.appendChild(list);
+        planDiv.appendChild(add);
+
+        el.appendChild(title);
+        el.appendChild(status);
+        el.appendChild(btns);
+        el.appendChild(planDiv);
+        grid.appendChild(el);
+      });
+    }
+
+    const themeSwitcher = document.getElementById('theme-switcher');
+    
+    function applyTheme(themeName) {
+      document.body.className = `theme-${themeName}`;
+      localStorage.setItem(THEME_STORAGE_KEY, themeName);
+      themeSwitcher.value = themeName;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
+      applyTheme(savedTheme);
+      
+      themeSwitcher.addEventListener('change', (e) => {
+        applyTheme(e.target.value);
+      });
+    });
+
+    render();
+
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(!confirm('Сбросить всю неделю в "Чистый день" и очистить планы?')) return;
+      week = DAYS.map(()=>({state:'clean', plan:[]})); saveState(week); render();
+    });
+
+    document.getElementById('resetTasksBtn').addEventListener('click', ()=>{
+      if(!confirm('Очистить все задачи, сохранив состояния дней?')) return;
+      week = week.map(w=>({...w, plan:[]})); saveState(week); render();
+    });
+
+    let SQL = null; let db = null;
+    async function loadSqlJs(){
+      if(SQL) return SQL;
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js';
+      document.head.appendChild(script);
+      await new Promise((res,rej)=>{ script.onload=res; script.onerror=rej; });
+      SQL = await initSqlJs({locateFile: file => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/'+file});
+      return SQL;
+    }
+
+    async function saveToSql(){
+      try{ await loadSqlJs(); }catch(e){ alert('Не удалось загрузить sql.js. Используйте другой метод.'); return; }
+      db = new SQL.Database();
+      db.run('CREATE TABLE week(day TEXT PRIMARY KEY, state TEXT, plan TEXT);');
+      const stmt = db.prepare('INSERT INTO week VALUES (?,?,?);');
+      week.forEach((w,i)=>{ stmt.run([DAYS[i], w.state, JSON.stringify(w.plan)]); });
+      stmt.free();
+      const data = db.export();
+      const blob = new Blob([data], {type:'application/x-sqlite3'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'anti_tup_week.sqlite'; document.body.appendChild(a); a.click(); a.remove();
+      alert('Сохранено в файл SQLite (скачалось).');
+    }
+
+    async function loadFromSql(){
+      try{ await loadSqlJs(); }catch(e){ alert('Не удалось загрузить sql.js.'); return; }
+      const input = document.createElement('input'); input.type='file'; input.accept='.sqlite,.db';
+      input.onchange = ()=>{
+        const f = input.files[0]; if(!f) return; const r = new FileReader();
+        r.onload = ()=>{
+          try{
+            const u8 = new Uint8Array(r.result);
+            const db2 = new SQL.Database(u8);
+            const res = db2.exec('SELECT day,state,plan FROM week;');
+            if(!res || !res[0]) throw new Error('Таблица week не найдена');
+            const values = res[0].values;
+            const map = {};
+            values.forEach(([d,s,p])=>{ map[d]={state:s,plan: JSON.parse(p||'[]')}; });
+            week = DAYS.map(d=>({state: STATES.includes(map[d]?.state)? map[d].state : 'clean', plan: Array.isArray(map[d]?.plan)? map[d].plan:[]}));
+            saveState(week); render(); alert('Загрузка из SQLite выполнена');
+          }catch(err){ alert('Ошибка при чтении SQLite: '+err.message); }
+        };
+        r.readAsArrayBuffer(f);
+      };
+      input.click();
+    }
+
+    document.getElementById('saveSqlBtn').addEventListener('click', saveToSql);
+    document.getElementById('loadSqlBtn').addEventListener('click', loadFromSql);
+
+    window.addEventListener('beforeunload', ()=>{ saveState(week); });
+  </script>
+</body>
+</html>
